@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
@@ -20,6 +22,8 @@
                     <li class="nav-item">
                         <a class="nav-link" href="index.html">Home</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="stats.html">Stats</a>
                     <li class="nav-item">
                         <a class="nav-link" href="create-topic.html">Create Topic</a>
                     </li>
@@ -39,10 +43,14 @@
                 <div class="sidebar-content">
                     <h5><i class="fas fa-tags"></i> Categories</h5>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><a href="#" onclick="filterByCategory('all')"><i class="fas fa-globe"></i> All Topics</a></li>
-                        <li class="list-group-item"><a href="#" onclick="filterByCategory('general')"><i class="fas fa-comments"></i> General</a></li>
-                        <li class="list-group-item"><a href="#" onclick="filterByCategory('tech')"><i class="fas fa-laptop"></i> Technology</a></li>
-                        <li class="list-group-item"><a href="#" onclick="filterByCategory('discussion')"><i class="fas fa-users"></i> Discussion</a></li>
+                        <li class="list-group-item"><a href="#" onclick="filterByCategory('all')"><i
+                                    class="fas fa-globe"></i> All Topics</a></li>
+                        <li class="list-group-item"><a href="#" onclick="filterByCategory('general')"><i
+                                    class="fas fa-comments"></i> General</a></li>
+                        <li class="list-group-item"><a href="#" onclick="filterByCategory('tech')"><i
+                                    class="fas fa-laptop"></i> Technology</a></li>
+                        <li class="list-group-item"><a href="#" onclick="filterByCategory('discussion')"><i
+                                    class="fas fa-users"></i> Discussion</a></li>
                     </ul>
                     <h5 class="mt-4"><i class="fas fa-fire"></i> Trending</h5>
                     <ul class="list-group list-group-flush" id="trending-list">
@@ -92,4 +100,5 @@
     <script src="js/app.js"></script>
     <script src="js/index.js"></script>
 </body>
+
 </html>

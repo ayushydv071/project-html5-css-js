@@ -154,6 +154,25 @@ body {
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
+.btn-oval {
+    border-radius: 50px !important;
+    padding: 0.5rem 1.5rem !important;
+    border-width: 2px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+}
+
+/* Navbar buttons specifically */
+.navbar .btn-oval {
+    display: inline-block;
+    text-decoration: none;
+    text-align: center;
+}
+
 /* Avatars */
 .avatar-small {
     width: 35px;

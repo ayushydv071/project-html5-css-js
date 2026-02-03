@@ -47,7 +47,10 @@ function renderUserIndicator() {
             <button onclick="logout()">Logout</button>
         `;
     } else {
-        indicator.innerHTML = '<a href="login.html">Login</a> | <a href="register.html">Register</a>';
+        indicator.innerHTML = `
+            <a href="login.html" class="btn btn-outline-primary btn-oval">Login</a>
+            <a href="register.html" class="btn btn-primary btn-oval">Register</a>
+        `;
     }
 }
 
@@ -71,7 +74,7 @@ function loadDarkMode() {
 }
 
 // Initialize on load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadDarkMode();
     renderUserIndicator();
 });

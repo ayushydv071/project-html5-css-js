@@ -19,7 +19,6 @@ function renderTopics(topics) {
                         <p class="card-text">${topic.content.substring(0, 80)}...</p>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <small class="text-muted">
-                                <img src="${author.avatar}" class="avatar-small me-1" alt="${author.username}">
                                 ${author.username}
                             </small>
                             <small class="text-muted"><i class="fas fa-heart text-danger"></i> ${topic.likes}</small>

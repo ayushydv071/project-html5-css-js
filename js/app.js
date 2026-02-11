@@ -1,21 +1,23 @@
 // Common functions for the forum app
+const API_URL = 'http://localhost:3000/api';
 
-// Get data from localStorage
-function getUsers() {
-    return JSON.parse(localStorage.getItem('users')) || [];
-}
-
-function getTopics() {
-    return JSON.parse(localStorage.getItem('topics')) || [];
+// API Helper
+async function apiFetch(endpoint, options = {}) {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+        }
+    });
+    if (!response.ok) {
+        throw new Error(await response.text());
+    }
+    return response.json();
 }
 
 function getCurrentUser() {
     return JSON.parse(localStorage.getItem('currentUser'));
-}
-
-// Set data
-function setTopics(topics) {
-    localStorage.setItem('topics', JSON.stringify(topics));
 }
 
 function setCurrentUser(user) {
@@ -28,27 +30,24 @@ function formatDate(dateString) {
     return date.toLocaleString();
 }
 
-function getUserById(id) {
-    const users = getUsers();
-    return users.find(user => user.id === id);
-}
-
 // Render user indicator
 function renderUserIndicator() {
     const user = getCurrentUser();
     const indicator = document.getElementById('user-indicator');
+    if (!indicator) return;
+
     if (user) {
         indicator.innerHTML = `
-            <a href="profile.html" class="me-2">
-                <img src="${user.avatar}" alt="Avatar" class="avatar-small me-1">
+            <a href="profile.html" class="me-2 text-decoration-none">
+                <img src="${user.avatar}" alt="Avatar" class="avatar-small me-1" style="width:30px;height:30px;border-radius:50%">
                 ${user.username}
             </a>
-            ${user.role === 'admin' ? '<span class="badge badge-admin me-2">Admin</span>' : ''}
-            <button onclick="logout()">Logout</button>
+            ${user.role === 'admin' ? '<span class="badge bg-danger me-2">Admin</span>' : ''}
+            <button class="btn btn-outline-danger btn-sm" onclick="logout()">Logout</button>
         `;
     } else {
         indicator.innerHTML = `
-            <a href="login.html" class="btn btn-outline-primary btn-oval">Login</a>
+            <a href="login.html" class="btn btn-outline-primary btn-oval me-2">Login</a>
             <a href="register.html" class="btn btn-primary btn-oval">Register</a>
         `;
     }
@@ -57,7 +56,7 @@ function renderUserIndicator() {
 // Logout
 function logout() {
     setCurrentUser(null);
-    location.reload();
+    window.location.href = 'index.html';
 }
 
 // Toggle dark mode

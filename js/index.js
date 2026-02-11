@@ -2,11 +2,19 @@
 
 let currentCategory = 'all';
 
+const topicsList = document.getElementById('topics-list');
+
 function renderTopics(topics) {
     const topicsList = document.getElementById('topics-list');
     topicsList.innerHTML = '';
+
+    if (topics.length === 0) {
+        topicsList.innerHTML = '<div class="col-12 text-center"><h3>No topics found</h3></div>';
+        return;
+    }
+
     topics.forEach((topic, index) => {
-        const author = getUserById(topic.author);
+        const author = topic.author; // Author is now an object included in topic
         const topicCard = `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card topic-card" style="animation-delay: ${index * 0.1}s">
@@ -19,7 +27,7 @@ function renderTopics(topics) {
                         <p class="card-text">${topic.content.substring(0, 80)}...</p>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <small class="text-muted">
-                                ${author.username}
+                                ${author ? author.username : 'Unknown'}
                             </small>
                             <small class="text-muted"><i class="fas fa-heart text-danger"></i> ${topic.likes}</small>
                         </div>
@@ -34,7 +42,7 @@ function renderTopics(topics) {
 
 function updateStats(topics) {
     const totalTopics = topics.length;
-    const totalComments = topics.reduce((sum, topic) => sum + topic.comments.length, 0);
+    const totalComments = topics.reduce((sum, topic) => sum + (topic.comments ? topic.comments.length : 0), 0);
     document.getElementById('total-topics').textContent = totalTopics;
     document.getElementById('total-comments').textContent = totalComments;
 
@@ -56,30 +64,36 @@ function filterByCategory(category) {
     applyFilters();
 }
 
-function applyFilters() {
+async function applyFilters() {
     const search = document.getElementById('search').value.toLowerCase();
     const filter = document.getElementById('filter').value;
-    let topics = getTopics();
 
-    // Filter by category (dummy, since no categories in data)
-    if (currentCategory !== 'all') {
-        // For demo, filter by title containing category name
-        topics = topics.filter(topic => topic.title.toLowerCase().includes(currentCategory));
+    try {
+        let topics = await apiFetch('/topics');
+
+        // Filter by category (dummy, since no categories in data)
+        if (currentCategory !== 'all') {
+            // For demo, filter by title containing category name
+            topics = topics.filter(topic => topic.title.toLowerCase().includes(currentCategory));
+        }
+
+        // Filter by search
+        if (search) {
+            topics = topics.filter(topic => topic.title.toLowerCase().includes(search) || topic.content.toLowerCase().includes(search));
+        }
+
+        // Sort
+        if (filter === 'newest') {
+            topics.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        } else if (filter === 'most-liked') {
+            topics.sort((a, b) => b.likes - a.likes);
+        }
+
+        renderTopics(topics);
+    } catch (error) {
+        console.error('Error fetching topics:', error);
+        topicsList.innerHTML = '<div class="alert alert-danger">Error loading topics. Ensure Node.js server is running.</div>';
     }
-
-    // Filter by search
-    if (search) {
-        topics = topics.filter(topic => topic.title.toLowerCase().includes(search) || topic.content.toLowerCase().includes(search));
-    }
-
-    // Sort
-    if (filter === 'newest') {
-        topics.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (filter === 'most-liked') {
-        topics.sort((a, b) => b.likes - a.likes);
-    }
-
-    renderTopics(topics);
 }
 
 // Initial render

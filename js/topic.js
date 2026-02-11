@@ -6,7 +6,7 @@ function getTopicId() {
 }
 
 function renderTopic(topic) {
-    const author = getUserById(topic.author);
+    const author = topic.author;
     const topicDetails = document.getElementById('topic-details');
     topicDetails.innerHTML = `
         <div class="card shadow-lg border-0 overflow-hidden">
@@ -26,7 +26,7 @@ function renderTopic(topic) {
                     <button class="btn btn-outline-primary like-btn" onclick="likeTopic(${topic.id})">
                         <i class="fas fa-heart me-1"></i> Like (${topic.likes})
                     </button>
-                    ${getCurrentUser() && getCurrentUser().role === 'admin' ? `<button class="btn btn-danger" onclick="deleteTopic(${topic.id})"><i class="fas fa-trash-alt me-1"></i> Delete</button>` : ''}
+                    ${getCurrentUser() && (getCurrentUser().role === 'admin' || getCurrentUser().id === author.id) ? `<button class="btn btn-danger" onclick="deleteTopic(${topic.id})"><i class="fas fa-trash-alt me-1"></i> Delete</button>` : ''}
                 </div>
             </div>
         </div>
@@ -37,7 +37,7 @@ function renderComments(comments) {
     const commentsList = document.getElementById('comments-list');
     commentsList.innerHTML = '';
     comments.forEach(comment => {
-        const author = getUserById(comment.author);
+        const author = comment.author;
         const commentDiv = `
             <div class="comment mb-3">
                 <div class="d-flex align-items-center mb-2">
@@ -50,7 +50,7 @@ function renderComments(comments) {
                     <button class="btn btn-sm btn-link text-decoration-none p-0 me-3 like-btn" onclick="likeComment(${comment.id})">
                         <i class="far fa-heart"></i> Like (${comment.likes})
                     </button>
-                    ${getCurrentUser() && getCurrentUser().role === 'admin' ? `<button class="btn btn-sm btn-link text-danger text-decoration-none p-0" onclick="deleteComment(${comment.id})">Delete</button>` : ''}
+                    ${getCurrentUser() && (getCurrentUser().role === 'admin' || getCurrentUser().id === author.id) ? `<button class="btn btn-sm btn-link text-danger text-decoration-none p-0" onclick="deleteComment(${comment.id})">Delete</button>` : ''}
                 </div>
             </div>
         `;
@@ -58,31 +58,32 @@ function renderComments(comments) {
     });
 }
 
-function likeTopic(topicId) {
-    const topics = getTopics();
-    const topic = topics.find(t => t.id === topicId);
-    if (topic) {
-        topic.likes++;
-        setTopics(topics);
+async function likeTopic(topicId) {
+    try {
+        await apiFetch(`/topics/${topicId}/like`, { method: 'POST' });
+        // Refresh topic
+        const topic = await apiFetch(`/topics/${topicId}`);
         renderTopic(topic);
+    } catch (error) {
+        console.error('Error liking topic:', error);
+        alert('Error liking topic');
     }
 }
 
-function likeComment(commentId) {
-    const topics = getTopics();
-    const topicId = getTopicId();
-    const topic = topics.find(t => t.id === topicId);
-    if (topic) {
-        const comment = topic.comments.find(c => c.id === commentId);
-        if (comment) {
-            comment.likes++;
-            setTopics(topics);
-            renderComments(topic.comments);
-        }
+async function likeComment(commentId) {
+    try {
+        await apiFetch(`/comments/${commentId}/like`, { method: 'POST' });
+        // Refresh comments
+        const topicId = getTopicId();
+        const topic = await apiFetch(`/topics/${topicId}`); // Re-fetch topic to get comments
+        renderComments(topic.comments);
+    } catch (error) {
+        console.error('Error liking comment:', error);
+        alert('Error liking comment');
     }
 }
 
-function addComment() {
+async function addComment() {
     const user = getCurrentUser();
     if (!user) {
         alert('Please login to add a comment.');
@@ -90,52 +91,71 @@ function addComment() {
     }
     const content = document.getElementById('new-comment').value.trim();
     if (!content) return;
-    const topics = getTopics();
-    const topic = topics.find(t => t.id === getTopicId());
-    if (topic) {
-        const newComment = {
-            id: Date.now(),
-            content,
-            author: user.id,
-            createdAt: new Date().toISOString(),
-            likes: 0
-        };
-        topic.comments.push(newComment);
-        setTopics(topics);
-        renderComments(topic.comments);
+
+    try {
+        await apiFetch('/comments', {
+            method: 'POST',
+            body: JSON.stringify({
+                content,
+                topic_id: getTopicId(),
+                author_id: user.id
+            })
+        });
         document.getElementById('new-comment').value = '';
+
+        // Refresh comments
+        const topic = await apiFetch(`/topics/${getTopicId()}`);
+        renderComments(topic.comments);
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        alert('Error adding comment');
     }
 }
 
-function deleteTopic(topicId) {
+async function deleteTopic(topicId) {
     if (confirm('Are you sure you want to delete this topic?')) {
-        const topics = getTopics().filter(t => t.id !== topicId);
-        setTopics(topics);
-        window.location.href = 'index.html';
+        try {
+            await apiFetch(`/topics/${topicId}`, { method: 'DELETE' });
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error('Error deleting topic:', error);
+            alert('Error deleting topic');
+        }
     }
 }
 
-function deleteComment(commentId) {
+async function deleteComment(commentId) {
     if (confirm('Are you sure you want to delete this comment?')) {
-        const topics = getTopics();
-        const topic = topics.find(t => t.id === getTopicId());
-        if (topic) {
-            topic.comments = topic.comments.filter(c => c.id !== commentId);
-            setTopics(topics);
+        try {
+            await apiFetch(`/comments/${commentId}`, { method: 'DELETE' });
+            // Refresh comments
+            const topic = await apiFetch(`/topics/${getTopicId()}`);
             renderComments(topic.comments);
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            alert('Error deleting comment');
         }
     }
 }
 
 // Initial render
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     const topicId = getTopicId();
-    const topics = getTopics();
-    const topic = topics.find(t => t.id === topicId);
-    if (topic) {
-        renderTopic(topic);
-        renderComments(topic.comments);
-    } else {
-        document.getElementById('topic-details').innerHTML = '<p>Topic not found.</p>';
+    if (!topicId) {
+        document.getElementById('topic-details').innerHTML = '<p>Topic ID missing.</p>';
+        return;
+    }
+
+    try {
+        const topic = await apiFetch(`/topics/${topicId}`);
+        if (topic) {
+            renderTopic(topic);
+            renderComments(topic.comments);
+        } else {
+            document.getElementById('topic-details').innerHTML = '<p>Topic not found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading topic:', error);
+        document.getElementById('topic-details').innerHTML = '<p>Topic not found or server error.</p>';
     }
 });

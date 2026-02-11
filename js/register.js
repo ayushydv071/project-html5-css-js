@@ -1,6 +1,6 @@
 // Register logic
 
-document.getElementById('register-form').addEventListener('submit', function (e) {
+document.getElementById('register-form').addEventListener('submit', async function (e) {
     e.preventDefault();
     const username = document.getElementById('username').value.trim();
     const email = document.getElementById('email').value.trim();
@@ -21,24 +21,23 @@ document.getElementById('register-form').addEventListener('submit', function (e)
         return;
     }
 
-    const users = getUsers();
-    if (users.find(u => u.username === username)) {
-        alert('Username already exists.');
-        return;
-    }
+    try {
+        const newUser = await apiFetch('/register', {
+            method: 'POST',
+            body: JSON.stringify({
+                username,
+                email,
+                password,
+                college,
+                skills,
+                bio
+            })
+        });
 
-    const newUser = {
-        id: Date.now(),
-        username,
-        email,
-        bio: bio || '',
-        college: college,
-        skills: skills,
-        avatar: 'https://via.placeholder.com/150', // Default placeholder
-        role: 'user'
-    };
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    setCurrentUser(newUser);
-    window.location.href = 'index.html';
+        setCurrentUser(newUser);
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error('Registration error:', error);
+        alert('Registration failed: ' + error.message);
+    }
 });

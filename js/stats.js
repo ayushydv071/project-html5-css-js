@@ -1,7 +1,6 @@
 // Stats page logic
 
-function getFilteredTopics(timeFilter) {
-    const topics = getTopics();
+function getFilteredTopics(topics, timeFilter) {
     const now = new Date();
 
     // Filter function based on time
@@ -19,39 +18,31 @@ function getFilteredTopics(timeFilter) {
     });
 }
 
-function updateStats() {
-    const timeFilter = document.getElementById('timeFilter').value;
-    const filteredTopics = getFilteredTopics(timeFilter);
-    const allTopics = getTopics(); // Need all topics to check comments dates effectively if we wanted precise comment stats, but for now we'll sum stats of the *created topics* or we need to iterate all comments of all topics?
-    // Requirement says: "real time stats like engagement total likes total discussion formed"
+async function updateStats() {
+    try {
+        const allTopics = await apiFetch('/topics');
+        const timeFilter = document.getElementById('timeFilter').value;
+        const filteredTopics = getFilteredTopics(allTopics, timeFilter);
 
-    // Let's refine the logic:
-    // "Total Discusssions Formed" -> Count of topics created in that period.
-    // "Total Likes" -> Likes on topics created in that period? OR Likes *received* in that period?
-    // content typically stores total likes. timestamps for likes are not usually stored in this simple schema.
-    // We will assume "Stats for Topics created in this period" for simplicity, OR "Stats accumulated" (but we don't have event logs).
-    // Given the schema, "Counts of objects created within date range" is the most accurate interpretation possible.
+        let totalDiscussions = filteredTopics.length;
+        let totalLikes = 0;
+        let totalComments = 0;
 
-    // HOWEVER, for "Engagement", it might be better to sum up likes/comments of the visible topics.
+        filteredTopics.forEach(topic => {
+            totalLikes += topic.likes;
+            totalComments += (topic.comments ? topic.comments.length : 0);
+        });
 
-    let totalDiscussions = filteredTopics.length;
-    let totalLikes = 0;
-    let totalComments = 0;
+        // Animate numbers
+        animateValue(document.getElementById('stats-discussions'), parseInt(document.getElementById('stats-discussions').textContent) || 0, totalDiscussions, 500);
+        animateValue(document.getElementById('stats-likes'), parseInt(document.getElementById('stats-likes').textContent) || 0, totalLikes, 500);
+        animateValue(document.getElementById('stats-engagement'), parseInt(document.getElementById('stats-engagement').textContent) || 0, totalLikes + totalComments, 500);
 
-    filteredTopics.forEach(topic => {
-        totalLikes += topic.likes;
-        totalComments += topic.comments.length;
-
-        // Note: In a real app we'd filter comments by date too, but here comments are nested. 
-        // We'll trust the metric "Engagement on topics started in this period".
-    });
-
-    // Animate numbers
-    animateValue(document.getElementById('stats-discussions'), parseInt(document.getElementById('stats-discussions').textContent), totalDiscussions, 500);
-    animateValue(document.getElementById('stats-likes'), parseInt(document.getElementById('stats-likes').textContent), totalLikes, 500);
-    animateValue(document.getElementById('stats-engagement'), parseInt(document.getElementById('stats-engagement').textContent), totalLikes + totalComments, 500);
-
-    renderActivityLog(filteredTopics);
+        renderActivityLog(filteredTopics);
+    } catch (error) {
+        console.error('Error updating stats:', error);
+        document.getElementById('activity-log').innerHTML = '<div class="alert alert-danger">Error loading stats.</div>';
+    }
 }
 
 function animateValue(obj, start, end, duration) {
@@ -80,7 +71,7 @@ function renderActivityLog(topics) {
     }
 
     sorted.forEach(topic => {
-        const author = getUserById(topic.author);
+        const author = topic.author;
         logContainer.innerHTML += `
             <div class="list-group-item">
                 <div class="d-flex w-100 justify-content-between">
@@ -88,9 +79,9 @@ function renderActivityLog(topics) {
                     <small class="text-muted">${formatDate(topic.createdAt)}</small>
                 </div>
                 <small class="text-muted">
-                    <i class="fas fa-user-circle me-1"></i> ${author.username} | 
+                    <i class="fas fa-user-circle me-1"></i> ${author ? author.username : 'Unknown'} | 
                     <i class="fas fa-heart text-danger ms-2"></i> ${topic.likes} | 
-                    <i class="fas fa-comment ms-2"></i> ${topic.comments.length}
+                    <i class="fas fa-comment ms-2"></i> ${topic.comments ? topic.comments.length : 0}
                 </small>
             </div>
         `;
@@ -100,4 +91,7 @@ function renderActivityLog(topics) {
 // Initial render
 document.addEventListener('DOMContentLoaded', function () {
     updateStats();
+
+    // Add event listener for filter change
+    document.getElementById('timeFilter').addEventListener('change', updateStats);
 });

@@ -1,16 +1,20 @@
 // Login logic
 
-document.getElementById('login-form').addEventListener('submit', function(e) {
+document.getElementById('login-form').addEventListener('submit', async function (e) {
     e.preventDefault();
     const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value; // ignored
+    const password = document.getElementById('password').value;
 
-    const users = getUsers();
-    const user = users.find(u => u.username === username);
-    if (user) {
+    try {
+        const user = await apiFetch('/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+        });
+
         setCurrentUser(user);
         window.location.href = 'index.html';
-    } else {
-        alert('Invalid username.');
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Invalid username or password.');
     }
 });
